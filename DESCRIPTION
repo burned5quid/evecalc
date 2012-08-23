@@ -1,0 +1,10 @@
+Package: evecalc
+Type: Package
+Title: Eve Online calculation routines
+Version: 0.0.1
+Date: 2012-08-05
+Author: Mick Cooney <mickcooney@gmail.com>
+Maintainer: Mick Cooney <mickcooney@gmail.com>
+Description: This package contains a bunch of routines that will be useful for industry and trading in Eve Online.
+License: Artistic-2.0
+Depends: R (>= 2.7), data.table, RSQLite, XML
