@@ -7,4 +7,5 @@ Author: Mick Cooney <mickcooney@gmail.com>
 Maintainer: Mick Cooney <mickcooney@gmail.com>
 Description: This package contains a bunch of routines that will be useful for industry and trading in Eve Online.
 License: Artistic-2.0
-Depends: R (>= 2.7), data.table, RSQLite, XML
+Depends: R (>= 2.7), data.table
+Imports: RSQLite, XML
