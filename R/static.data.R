@@ -3,7 +3,12 @@
 #' This function reads in the entries from the CSV trade file downloads
 #' and returns a data.table of all the unique entries
 #'
-#' @usage 
+#' @usage get.blueprint.data(typeID, dbconnect = static.dbconnection)
+#' @usage get.blueprint.id(typeID)
+#' @usage get.component.data(typeID, dbconnect = static.dbconnection)
+#' @usage get.item.data(dbconnect = static.dbconnection)
+#' @usage get.material.data(typeID, dbconnect = static.dbconnection)
+#' @usage get.name.data(dbconnect = static.dbconnection)
 #' @keywords staticdata
 #' @param typeID typeID for the item to be queried
 #' @param dbconnect connection to the sqlite static data dump
@@ -29,10 +34,10 @@ get.blueprint.data <- function(typeID, dbconnect = staticdb.connection) {
                            "  AND c.typeID = ", iterID, sep = '');
         
         mineral.dt <- data.table(dbGetQuery(dbconnect, sql.query));
-        
+
         ### Now we need the extra data
         blueprintID <- get.blueprint.id(iterID);
-        
+
         if(length(blueprintID) > 0) {
             sql.query <- paste("SELECT t.typeID , t.typeName, r.quantity, 0 AS wasteFactor ",
                                "FROM ramTypeRequirements AS r, invTypes AS t ",
@@ -49,6 +54,8 @@ get.blueprint.data <- function(typeID, dbconnect = staticdb.connection) {
         } else {
             total.dt <- mineral.dt;
         }
+
+        total.dt <- within(total.dt, { wasteFactor = as.numeric(wasteFactor) });
         
         if(dim(total.dt)[1] > 0) {
             total.dt <- within(total.dt, {
@@ -56,7 +63,7 @@ get.blueprint.data <- function(typeID, dbconnect = staticdb.connection) {
                 typeName          = as.character(typeName);
             });
         }
-        
+
         return(total.dt);
     };
     

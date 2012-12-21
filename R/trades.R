@@ -3,12 +3,14 @@
 #' This function reads in the entries from the CSV trade file downloads
 #' and returns a data.table of all the unique entries
 #'
-#' @usage 
+#' @usage get.trade.data(trade.files)
+#' @usage calculate.avg.price(trade.dt)
+#' @usage show.last.trades(typeID, count = 10, side = 'buy', trade.dt = trade.dt)
 #' @keywords trades
 #' @param typeID typeID for the item to be manufactured
 #' @name trades
-#' @aliases 
-#' @export 
+#' @aliases get.trade.data calculate.avg.price show.last.trades
+#' @export get.trade.data calculate.avg.price show.last.trades
 #' @import data.table
 #' @examples
 #' \dontrun{
