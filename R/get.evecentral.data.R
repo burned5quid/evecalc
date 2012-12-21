@@ -24,7 +24,7 @@ get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', nam
 
     root.url <- 'http://api.eve-central.com/api/marketstat';
     
-    systems.qs <- paste(systemid, collapse = '&usesystem='); print(systems.qs);
+    systems.qs <- paste(systemid, collapse = '&usesystem=');
     type.qs    <- paste(typeID,   collapse = '&typeid=');
     
     fetch.url <- paste(root.url, '?typeid=', type.qs, '&usesystem=', systems.qs, sep = '');
