@@ -1,6 +1,6 @@
 #' Retrieving price data from eve-central.com
 #'
-#' 
+#'
 #'
 #' @usage get.evecentral.data(typeID, system)
 #' @keywords recycle
@@ -18,24 +18,42 @@
 #' }
 NULL
 
-get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', name.dt = name.dt) {
-
-    systemid <- name.dt[itemName %in% system]$itemID;
+get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', name.dt = name.dt, block.size = 20) {
 
     root.url <- 'http://api.eve-central.com/api/marketstat';
-    
-    systems.qs <- paste(systemid, collapse = '&usesystem=');
-    type.qs    <- paste(typeID,   collapse = '&typeid=');
-    
-    fetch.url <- paste(root.url, '?typeid=', type.qs, '&usesystem=', systems.qs, sep = '');
-    
-    cat(paste('Fetching url', fetch.url, '\n'));
-    data.xml <- xmlRoot(xmlTreeParse(fetch.url));
-    
-    typeids <- as.numeric(unlist(lapply(getNodeSet(data.xml, '//type'),          xmlGetAttr, 'id')));
 
-    bid <- as.numeric(unlist(lapply(getNodeSet(data.xml, '//type/buy/max'),  xmlValue)));
-    ask <- as.numeric(unlist(lapply(getNodeSet(data.xml, '//type/sell/min'), xmlValue)));
-    
-    return(data.table(typeID = typeids, system = system, bid = bid, ask = ask, price = ask, key = 'typeID'));
+    get.data <- function(data.dt) {
+
+        iter.system <- unique(data.dt$system);
+        systemid <- name.dt[itemName %in% iter.system]$itemID;
+
+        iter.typeID <- data.dt$typeID;
+
+        systems.qs <- paste(systemid, collapse = '&usesystem=');
+        type.qs    <- paste(iter.typeID, collapse = '&typeid=');
+
+        fetch.url <- paste(root.url, '?typeid=', type.qs, '&usesystem=', systems.qs, sep = '');
+
+        cat(paste('Fetching url', fetch.url, '\n'));
+        data.xml <- xmlRoot(xmlTreeParse(fetch.url));
+
+        typeids <- as.numeric(unlist(lapply(getNodeSet(data.xml, '//type'),          xmlGetAttr, 'id')));
+
+        bid <- as.numeric(unlist(lapply(getNodeSet(data.xml, '//type/buy/max'),  xmlValue)));
+        ask <- as.numeric(unlist(lapply(getNodeSet(data.xml, '//type/sell/min'), xmlValue)));
+
+        iter.dt <- data.table(typeID = typeids, system = iter.system, bid = bid, ask = ask, price = ask);
+
+        return(iter.dt);
+    }
+
+    data.dt <- CJ(system = system, typeID = typeID);
+    N       <- dim(data.dt)[1];
+    data.dt <- within(data.dt, { blockid = rep(1:N, each = block.size, length.out = N); });
+
+    price.dt <- data.dt[, get.data(.SD), by = blockid];
+
+    price.dt$blockid <- NULL;
+
+    return(price.dt);
 }

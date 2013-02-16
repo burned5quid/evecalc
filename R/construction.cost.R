@@ -13,6 +13,7 @@
 #' @aliases calculate.construction.cost calculate.advanced.construction.cost calculate.construction.profit
 #' @export calculate.construction.cost calculate.advanced.construction.cost calculate.construction.profit
 #' @import data.table
+#' @import plyr
 #' @examples
 #' \dontrun{
 #' ### Calculate the cost of building a Manticore (id 12031)
@@ -23,39 +24,61 @@
 #'
 NULL
 
-calculate.construction.cost <- function(typeID, ME = 0, price.dt = pricedata.dt, verbose = FALSE, dbconnect = data.connection) {
+calculate.construction.cost <- function(typeID, ME = 0, price.dt = pricedata.dt, verbose = FALSE, bpcost.dt = NULL, dbconnect = data.connection) {
     material.dt <- within(get.blueprint.data(typeID, dbconnect), {
         if(ME >= 0) {
             waste = round((0.1/(1 + ME))  * quantity * wasteFactor, 0);
         } else {
             waste = round((0.1 * abs(ME)) * quantity * wasteFactor, 0);
         }
-        
+
         required = quantity + waste;
-        
+
         waste = required - quantity;
     });
-    
+
     setkey(material.dt, typeID);
     setkey(price.dt,    typeID);
-    
-    material.dt <- merge(material.dt, price.dt[, list(typeID, price)], all.x = T, by = c('typeID'));
-    
+
+    material.dt <- merge(material.dt, price.dt[, list(matTypeID = typeID, price)], all.x = TRUE, by = c('matTypeID'));
+
     cost.dt <- within(material.dt, {
         requiredCost = required * price;
         wasteCost    = waste    * price;
     });
-    
+
+
+    ### If blueprint costs have been supplied, we add that in as an additional
+    ### line item and include it in the cost calculation.
+    if(!is.null(bpcost.dt)) {
+        itemID <- typeID;
+
+        bp.dt  <- bpcost.dt[typeID %in% itemID][, list(typeID,
+                                                       typeName     = as.character(typeName),
+                                                       matTypeID    = 0,
+                                                       matTypeName  = 'BPC',
+                                                       quantity     = 1,
+                                                       wasteFactor  = 0,
+                                                       waste        = 0,
+                                                       required     = 1,
+                                                       price        = bpcost,
+                                                       wasteCost    = 0,
+                                                       requiredCost = bpcost)];
+
+        cost.dt <- data.table(rbind.fill(cost.dt, bp.dt));
+    }
+
+
     if(!verbose) {
-        cost.dt <- cost.dt[, list(materialCost = sum(requiredCost),
+        cost.dt <- cost.dt[, list(materialCost = sum(requiredCost[matTypeName != 'BPC']),
                                   buildCost    = sum(requiredCost),
                                   buildWaste   = sum(wasteCost),
                                   maxWaste     = max(wasteCost),
                                   wasteRatio   = sum(wasteCost) / sum(requiredCost)),
-                           by = list(constructTypeID, constructTypeName)];
+                           by = list(typeID, typeName)];
     }
-    
-    
+
+
     return(cost.dt);
 }
 
@@ -101,12 +124,12 @@ calculate.advanced.construction.cost <- function(typeID, ME = c(0, 0), price.dt,
 
 calculate.construction.profit <- function(typeID, ...) {
     construct.dt <- calculate.construction.cost(typeID, ...);
-    
+
     profit.dt <- merge(construct.dt[, list(typeID, buildCost, buildWaste, maxWaste, wasteRatio)],
                        price.dt,
                        by = c('typeID'));
-    
+
     profit.dt <- within(profit.dt, { margin = price / buildCost; });
-    
+
     return(profit.dt[order(-margin)]);
 }
