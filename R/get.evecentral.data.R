@@ -22,9 +22,9 @@ get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', nam
 
     root.url <- 'http://api.eve-central.com/api/marketstat';
 
-    get.data <- function(data.dt) {
+    get.data <- function(data.dt, by.lst) {
 
-        iter.system <- unique(data.dt$system);
+        iter.system <- by.lst$system;
         systemid <- name.dt[itemName %in% iter.system]$itemID;
 
         iter.typeID <- data.dt$typeID;
@@ -42,7 +42,7 @@ get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', nam
         bid <- as.numeric(unlist(lapply(getNodeSet(data.xml, '//type/buy/max'),  xmlValue)));
         ask <- as.numeric(unlist(lapply(getNodeSet(data.xml, '//type/sell/min'), xmlValue)));
 
-        iter.dt <- data.table(typeID = typeids, system = iter.system, bid = bid, ask = ask, price = ask);
+        iter.dt <- data.table(typeID = typeids, bid = bid, ask = ask, price = ask);
 
         return(iter.dt);
     }
@@ -50,8 +50,8 @@ get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', nam
     data.dt <- CJ(system = system, typeID = typeID);
     N       <- dim(data.dt)[1];
     data.dt <- within(data.dt, { blockid = rep(1:N, each = block.size, length.out = N); });
-
-    price.dt <- data.dt[, get.data(.SD), by = blockid];
+#print(data.dt[1:50]);
+    price.dt <- data.dt[, get.data(.SD, .BY), by = list(system, blockid)];
 
     price.dt$blockid <- NULL;
 
