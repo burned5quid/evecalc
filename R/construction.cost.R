@@ -122,10 +122,10 @@ calculate.advanced.construction.cost <- function(typeID, ME = c(0, 0), price.dt,
 }
 
 
-calculate.construction.profit <- function(typeID, ...) {
-    construct.dt <- calculate.construction.cost(typeID, ...);
+calculate.construction.profit <- function(typeID, price.dt, ...) {
+    construct.dt <- calculate.construction.cost(typeID, price.dt = price.dt, ...);
 
-    profit.dt <- merge(construct.dt[, list(typeID, buildCost, buildWaste, maxWaste, wasteRatio)],
+    profit.dt <- merge(construct.dt[, list(typeID, typeName, buildCost, buildWaste, maxWaste, wasteRatio)],
                        price.dt,
                        by = c('typeID'));
 

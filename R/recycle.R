@@ -1,6 +1,6 @@
 #' Recycling calculation functions
 #'
-#' 
+#'
 #'
 #' @usage calculate.implied.mineral.prices(mineral.weights, oreids, price.dt)
 #' @keywords recycle
@@ -18,68 +18,56 @@
 #' }
 NULL
 
-calculate.implied.mineral.prices <- function(relative.price, oreids = idlist.ore, price.dt = pricedata.dt) {
-    recycle.dt <- construct.recycle.data(oreids, price.dt);
-    
-    if(missing(relative.price)) {
-        use.weights = mineral.price.weights;
-    }
-    
+calculate.implied.mineral.prices <- function(relative.price, oreids, price.dt = pricedata.dt) {
+    recycle.dt  <- construct.recycle.data(oreids, price.dt = price.dt, weights = relative.price);
     base.matrix <- construct.base.price.matrix(relative.price);
-    
+
     calculate.mineral.price <- function(tradedata.dt) {
         LHS <- rbind(as.matrix(tradedata.dt[, 1:7, with = F]), base.matrix);
-        RHS <- c(with(tradedata.dt, portionSize * avgprice), rep(0, 6));
-        
+        RHS <- c(with(tradedata.dt, portionSize * price), rep(0, 6));
+
         implied.prices        <- solve(LHS, RHS);
-        names(implied.prices) <- names(use.weights);
-        
+        names(implied.prices) <- names(relative.price);
+
         ### Now we need to zero out the prices for minerals that are not obtained from the ore
         zeroed <- as.numeric(tradedata.dt[1, 1:7, with = F]);
         zeroed <- zeroed / zeroed;
         zeroed[is.nan(zeroed)] <- 0;
-        
-        prices <- t(implied.prices) * zeroed;
-        
+
+        prices <- round(t(implied.prices) * zeroed, 2);
+
         return(data.table(prices));
     }
-    
+
     implied.price.dt <- recycle.dt[, calculate.mineral.price(.SD), by = list(typeID, typeName)];
-    
+
     return(implied.price.dt);
 }
 
 
-construct.base.price.matrix <- function(relative.price = mineral.relative.price) {
+construct.base.price.matrix <- function(relative.price) {
     base.matrix      <- diag(rep(1, 7));
     base.matrix[, 1] <- -relative.price;
-    
+
     return(base.matrix[2:7, ]);
 }
 
 
-construct.recycle.data <- function(oreids = oreids, price.dt = pricedata.dt) {
-    recycle.dt <- data.table(dcast(get.blueprint.data(oreids)[, list(constructTypeID, constructTypeName, typeName, quantity)],
-                                   constructTypeID + constructTypeName ~ typeName,
-                                   value_var = 'quantity',
+construct.recycle.data <- function(oreids, price.dt = pricedata.dt, weights) {
+    recycle.dt <- data.table(dcast(get.blueprint.data(oreids)[, list(typeID, typeName, matTypeName, quantity)],
+                                   typeID ~ matTypeName,
+                                   value.var = 'quantity',
                                    fill = 0),
-                             key = 'constructTypeID');
-    
+                             key = 'typeID');
+
     refining.dt <- merge(item.dt[typeID %in% oreids][, list(typeID, typeName, portionSize)],
-                         price.dt[transactionType == 'buy'][, list(typeID, avgprice)],
+                         price.dt[, list(typeID, price)],
                          by = 'typeID');
-    
-    names(refining.dt)[1] <- 'constructTypeID';
-    
-    recycle.dt <- recycle.dt[, c(1, 2, match(names(mineral.price.weights), names(recycle.dt))), with = F]
-    recycle.dt <- merge(recycle.dt, refining.dt, by = 'constructTypeID');
-    
-    recycle.dt <- within(recycle.dt, {
-        typeID            = constructTypeID;
-        
-        constructTypeID   = NULL;
-        constructTypeName = NULL;
-    });
-    
+
+    colnums <- match(names(weights), names(recycle.dt));
+    recycle.dt <- recycle.dt[, c(1, colnums), with = F]
+
+    recycle.dt <- recycle.dt[refining.dt];
+
     return(recycle.dt);
 }

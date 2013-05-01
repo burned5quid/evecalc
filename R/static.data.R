@@ -23,7 +23,7 @@
 #' }
 NULL
 
-get.blueprint.data <- function(typeID, dbconnect = staticdb.connection) {
+get.blueprint.data <- function(typeID, dbconnect = static.dbconnection) {
     get.data <- function(iterID) {
         ### First get the mineral count
         sql.query <- paste("SELECT c.typeID AS typeID, c.typeName typeName, ",
