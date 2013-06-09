@@ -13,8 +13,8 @@
 #' @param typeID typeID for the item to be queried
 #' @param dbconnect connection to the sqlite static data dump
 #' @name static.data
-#' @aliases get.blueprint.data get.blueprint.id get.component.data get.item.data get.material.data get.name.data
-#' @export get.blueprint.data get.blueprint.id get.component.data get.item.data get.material.data get.name.data
+#' @aliases get.blueprint.data get.blueprint.id get.component.data get.item.data get.material.data get.name.data get.reaction.data
+#' @export get.blueprint.data get.blueprint.id get.component.data get.item.data get.material.data get.name.data get.reaction.data
 #' @import data.table
 #' @import RSQLite
 #' @examples
@@ -128,4 +128,14 @@ get.name.data <- function(dbconnect = static.dbconnection) {
     sql.query <- paste("SELECT * FROM invNames");
 
     return(data.table(dbGetQuery(dbconnect, sql.query), key = 'itemID'));
+}
+
+
+get.reaction.data <- function(dbconnect = static.dbconnection) {
+    sql.query <- paste("SELECT reactionTypeID, tr.typeName reactionTypeName, input, r.typeID, tm.typeName typeName, quantity ",
+                       "FROM invTypes tr, invTypes tm, invTypeReactions r ",
+                       "WHERE tr.typeID = r.reactionTypeID ",
+                       "  AND tm.typeID = r.typeID");
+
+    return(data.table(dbGetQuery(dbconnect, sql.query), key = 'reactionTypeID'));
 }
