@@ -53,11 +53,12 @@ get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', nam
 
     price.dt <- data.dt[, get.data(.SD, .BY), by = list(system, blockid)];
 
-    price.dt$blockid <- NULL;
-    price.dt$date    <- as.Date(Sys.time());
+    price.dt[, blockid := NULL];
+    price.dt[, date    := as.Date(Sys.time())];
 
 
     setkey(price.dt, typeID);
 
     return(price.dt);
 }
+y
