@@ -25,17 +25,8 @@
 NULL
 
 calculate.construction.cost <- function(typeID, ME = 0, price.dt = pricedata.dt, verbose = FALSE, bpcost.dt = NULL, dbconnect = data.connection) {
-    material.dt <- within(get.blueprint.data(typeID, dbconnect), {
-        if(ME >= 0) {
-            waste = round((0.1/(1 + ME))  * quantity * wasteFactor, 0);
-        } else {
-            waste = round((0.1 * abs(ME)) * quantity * wasteFactor, 0);
-        }
 
-        required = quantity + waste;
-
-        waste = required - quantity;
-    });
+    material.dt <- calculate.waste(get.blueprint.data(typeID, dbconnect));
 
     setkey(material.dt, typeID);
     setkey(price.dt,    typeID);
@@ -91,6 +82,7 @@ calculate.advanced.construction.cost <- function(typeID, ME = c(0, 0), price.dt,
 
         mat.1.dt[, mergeID := matTypeID];
         mat.2.dt[, mergeID := typeID];
+
 print(mat.1.dt); print(mat.2.dt);
         basic.dt <- mat.1.dt[!matTypeID %in% mat.2.dt$typeID];
         comp.dt  <- merge(mat.1.dt[, list(mergeID, q1 = required)],
@@ -132,4 +124,19 @@ calculate.construction.profit <- function(typeID, price.dt, ...) {
     profit.dt <- within(profit.dt, { margin = price / buildCost; });
 
     return(profit.dt[order(-margin)]);
+}
+
+
+calculate.waste <- function(data.dt, ME) {
+    material.dt <- within(data.dt), {
+        if(ME >= 0) {
+            waste = round((0.1/(1 + ME))  * quantity * wasteFactor, 0);
+        } else {
+            waste = round((0.1 * abs(ME)) * quantity * wasteFactor, 0);
+        }
+
+        required = quantity + waste;
+
+        waste = required - quantity;
+    });
 }
