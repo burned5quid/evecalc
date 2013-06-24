@@ -26,7 +26,7 @@ NULL
 
 calculate.construction.cost <- function(typeID, ME = 0, price.dt = pricedata.dt, verbose = FALSE, bpcost.dt = NULL, dbconnect = data.connection) {
 
-    material.dt <- calculate.waste(get.blueprint.data(typeID, dbconnect));
+    material.dt <- calculate.waste(get.blueprint.data(typeID, dbconnect), ME);
 
     setkey(material.dt, typeID);
     setkey(price.dt,    typeID);
@@ -86,17 +86,17 @@ calculate.advanced.construction.cost <- function(typeID, ME = c(0, 0), price.dt,
 print(mat.1.dt); print(mat.2.dt);
         basic.dt <- mat.1.dt[!matTypeID %in% mat.2.dt$typeID];
         comp.dt  <- merge(mat.1.dt[, list(mergeID, q1 = required)],
-                          mat.2.dt[, list(mergeID, typeID, typeName, q2 = required, price)], by = 'mergeID');
+                          mat.2.dt[, list(mergeID, typeID = matTypeID, typeName = matTypeName, q2 = required, price)], by = 'mergeID');
 
         comp.dt[, quantity := q1 * q2];
 
-        cost.dt <- rbind(basic.dt[, list(typeID, typeName, quantity = required, price)],
+        cost.dt <- rbind(basic.dt[, list(typeID = matTypeID, typeName = matTypeName, quantity = required, price)],
                          comp.dt [, list(typeID, typeName, quantity, price)]);
 
         if(!verbose) {
             cost.dt <- cost.dt[, list(required = sum(quantity), price = max(price)), by = list(typeID, typeName)];
 
-            cost.dt <- within(cost.dt, { cost = required * price });
+            cost.dt[, cost := required * price];
 
             cost.dt <- cost.dt[, list(cost = sum(cost))];
         }
@@ -128,7 +128,7 @@ calculate.construction.profit <- function(typeID, price.dt, ...) {
 
 
 calculate.waste <- function(data.dt, ME) {
-    material.dt <- within(data.dt), {
+    material.dt <- within(data.dt, {
         if(ME >= 0) {
             waste = round((0.1/(1 + ME))  * quantity * wasteFactor, 0);
         } else {

@@ -61,4 +61,3 @@ get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', nam
 
     return(price.dt);
 }
-y
