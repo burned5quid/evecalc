@@ -48,20 +48,22 @@ get.blueprint.data <- function(typeID, dbconnect = static.dbconnection) {
 
 
             extra.dt <- data.table(dbGetQuery(dbconnect, sql.query));
-            extra.dt <- cbind(mineral.dt[rep(1, dim(extra.dt)[1]), list(typeID, typeName)], extra.dt);
 
-            total.dt <- rbind(mineral.dt[, list(typeID, typeName, matTypeID, matTypeName, quantity, wasteFactor)], extra.dt);
+            if(dim(mineral.dt)[1] > 0) {
+                extra.dt <- cbind(mineral.dt[rep(1, dim(extra.dt)[1]), list(typeID, typeName)], extra.dt);
+                total.dt <- rbind(mineral.dt[, list(typeID, typeName, matTypeID, matTypeName, quantity, wasteFactor)], extra.dt);
+            } else {
+                total.dt <- cbind(item.dt[typeID == iterID, list(typeID, typeName)], extra.dt);
+            }
         } else {
             total.dt <- mineral.dt;
         }
 
-        total.dt <- within(total.dt, { wasteFactor = as.numeric(wasteFactor) });
+        total.dt[, wasteFactor := as.numeric(wasteFactor)];
 
         if(dim(total.dt)[1] > 0) {
-            total.dt <- within(total.dt, {
-                typeName    = as.character(typeName);
-                matTypeName = as.character(matTypeName);
-            });
+            total.dt[, typeName    := as.character(typeName)];
+            total.dt[, matTypeName := as.character(matTypeName)];
         }
 
         return(total.dt);
