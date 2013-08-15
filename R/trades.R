@@ -32,10 +32,8 @@ get.trade.data <- function(trade.files) {
 
     alltrade.dt <- data.table(file = trade.files)[, read.trade.file(file), by = file];
 
-    alltrade.dt <- within(alltrade.dt, {
-        linetype = NULL;
-        file     = NULL;
-    });
+    alltrade.dt[, linetype := NULL];
+    alltrade.dt[, file     := NULL];
 
     trade.dt <- alltrade.dt[!duplicated(transactionID)];
 
@@ -48,19 +46,19 @@ calculate.avg.price <- function(trade.dt) {
                                    cash     = sum(quantity * price),
                                    avgprice = (sum(quantity * price) / sum(quantity))),
                             by = list(typeID, typeName, transactionType)];
-    
+
     setkey(avgprice.dt, typeID, transactionType);
-    
+
     return(avgprice.dt);
 }
 
 
 show.last.trades <- function(typeID, count = 10, side = 'buy', trade.dt = trade.dt) {
     showID  <- typeID;
-    
+
     show.dt <- trade.dt[typeID %in% showID][transactionType == side][, list(transactionID, transactTime, transactionType, typeID, typeName, quantity, price)];
-    
+
     print(tail(show.dt, n = count));
-    
+
     return();
 }

@@ -33,10 +33,9 @@ calculate.construction.cost <- function(typeID, ME = 0, price.dt = pricedata.dt,
 
     material.dt <- merge(material.dt, price.dt[, list(matTypeID = typeID, price)], all.x = TRUE, by = c('matTypeID'));
 
-    cost.dt <- within(material.dt, {
-        requiredCost = required * price;
-        wasteCost    = waste    * price;
-    });
+    cost.dt <- material.dt;
+    cost.dt[, requiredCost := required * price];
+    cost.dt[, wasteCost    := waste    * price];
 
 
     ### If blueprint costs have been supplied, we add that in as an additional
@@ -83,7 +82,7 @@ calculate.advanced.construction.cost <- function(typeID, ME = c(0, 0), price.dt,
         mat.1.dt[, mergeID := matTypeID];
         mat.2.dt[, mergeID := typeID];
 
-print(mat.1.dt); print(mat.2.dt);
+
         basic.dt <- mat.1.dt[!matTypeID %in% mat.2.dt$typeID];
         comp.dt  <- merge(mat.1.dt[, list(mergeID, q1 = required)],
                           mat.2.dt[, list(mergeID, typeID = matTypeID, typeName = matTypeName, q2 = required, price)], by = 'mergeID');
@@ -121,22 +120,25 @@ calculate.construction.profit <- function(typeID, price.dt, ...) {
                        price.dt,
                        by = c('typeID'));
 
-    profit.dt <- within(profit.dt, { margin = price / buildCost; });
+    profit.dt[, margin := price / buildCost];
 
     return(profit.dt[order(-margin)]);
 }
 
 
 calculate.waste <- function(data.dt, ME) {
-    material.dt <- within(data.dt, {
-        if(ME >= 0) {
-            waste = round((0.1/(1 + ME))  * quantity * wasteFactor, 0);
-        } else {
-            waste = round((0.1 * abs(ME)) * quantity * wasteFactor, 0);
-        }
+    stopifnot(is.data.table(data.dt));
 
-        required = quantity + waste;
+    waste.dt <- data.dt;
 
-        waste = required - quantity;
-    });
+    if(ME >= 0) {
+        waste.dt[, waste := round((0.1 / (1 + ME)) * quantity * wasteFactor, 0)];
+    } else {
+        waste.dt[, waste := round((0.1 * abs(ME))  * quantity * wasteFactor, 0)];
+    }
+
+    waste.dt[, required := quantity + waste];
+    waste.dt[, waste    := required - quantity];
+
+    return(waste.dt);
 }
