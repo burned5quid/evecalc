@@ -22,9 +22,7 @@ get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', nam
 
     root.url <- 'http://api.eve-central.com/api/marketstat';
 
-    get.data <- function(data.dt, by.lst) {
-
-        iter.system <- by.lst$system;
+    get.data <- function(data.dt, iter.system) {
         systemid <- name.dt[itemName %in% iter.system]$itemID;
 
         iter.typeID <- data.dt$typeID;
@@ -52,7 +50,7 @@ get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', nam
 
     data.dt[, blockid := rep(1:N, each = block.size, length.out = N)];
 
-    price.dt <- data.dt[, get.data(.SD, .BY), by = list(system, blockid)];
+    price.dt <- data.dt[, get.data(.SD, system), by = list(system, blockid)];
 
     price.dt[, blockid := NULL];
     price.dt[, date    := as.Date(Sys.time())];
