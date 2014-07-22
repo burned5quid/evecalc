@@ -60,3 +60,32 @@ get.evecentral.data <- function(typeID = idlist.mineral, system = 'Dodixie', nam
 
     return(price.dt);
 }
+
+
+update.prices <- function(typeID = idlist.marketdata, system = c('Jita', 'Amarr', 'Dodixie', 'Rens'), price.system = 'Jita',
+                          idlist.buyitems = idlist.buyitems, idlist.sellitems = idlist.sellitems, name.dt = name.dt, block.size = 20) {
+
+    prices.hubs.dt <- get.evecentral.data(idlist.marketdata, name.dt = name.dt, system = c('Jita', 'Amarr', 'Rens', 'Dodixie'));
+    use.prices.dt  <- prices.hubs.dt;
+    setkey(use.prices.dt, typeID);
+
+    date.str <- format(unique(prices.hubs.dt$date), '%Y%m%d');
+
+    prices.name <- paste("prices.hubs.", date.str, sep = '');
+
+    prices.var <- paste(prices.name, ".dt", sep = '');
+
+    assign(prices.var, prices.hubs.dt)
+
+    save(list = prices.var, file = paste("data/noautoload/prices/", prices.name, ".rda", sep = ''), compress = 'xz');
+
+
+    caprica.buy.dt  <- item.dt[use.prices.dt][system == price.system][typeID %in% idlist.buyitems] [, list(typeID, date, typeName, groupName, categoryName, price = round(bid * 0.9, 2))];
+    caprica.sell.dt <- item.dt[use.prices.dt][system == price.system][typeID %in% idlist.sellitems][, list(typeID, date, typeName, groupName, categoryName, price = round(bid * 1.05, 2))];
+
+    setkey(caprica.buy.dt, typeName);
+
+    prices.lst <- list(caprica.buy.dt  = caprica.buy.dt,
+                       caprica.sell.dt = caprica.sell.dt,
+                       prices.hubs.dt  = prices.hubs.dt);
+}
