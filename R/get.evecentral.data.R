@@ -80,12 +80,12 @@ update.prices <- function(typeID = idlist.marketdata, system = c('Jita', 'Amarr'
     save(list = prices.var, file = paste("data/noautoload/prices/", prices.name, ".rda", sep = ''), compress = 'xz');
 
 
-    caprica.buy.dt  <- item.dt[use.prices.dt][system == price.system][typeID %in% idlist.buyitems] [, list(typeID, date, typeName, groupName, categoryName, price = round(bid * 0.9, 2))];
-    caprica.sell.dt <- item.dt[use.prices.dt][system == price.system][typeID %in% idlist.sellitems][, list(typeID, date, typeName, groupName, categoryName, price = round(bid * 1.05, 2))];
+    y790.buy.dt  <- item.dt[use.prices.dt][system == price.system][typeID %in% idlist.buyitems] [, list(typeID, date, typeName, groupName, categoryName, price = round(bid * 0.9, 2))];
+    y790.sell.dt <- item.dt[use.prices.dt][system == price.system][typeID %in% idlist.sellitems][, list(typeID, date, typeName, groupName, categoryName, price = round(bid * 1.05, 2))];
 
     setkey(caprica.buy.dt, typeName);
 
-    prices.lst <- list(caprica.buy.dt  = caprica.buy.dt,
-                       caprica.sell.dt = caprica.sell.dt,
-                       prices.hubs.dt  = prices.hubs.dt);
+    prices.lst <- list(y790.buy.dt    = y790.buy.dt,
+                       y790.sell.dt   = y790.sell.dt,
+                       prices.hubs.dt = prices.hubs.dt);
 }
